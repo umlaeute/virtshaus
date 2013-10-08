@@ -12,6 +12,7 @@ assumptions:
   (this is esp. important if the data is backed up on a remote place where you
   don't have control over the security of the data)
 - maybe we have to exclude some disks from the backup
+- we assume that the backup will be small enough to fit on a file-system
 
 idea:
 - do not try to guess the disks to be backed up; have the user submit them
