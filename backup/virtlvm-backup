@@ -1,0 +1,153 @@
+#!/bin/sh
+
+## a gpg-key for encrypting the images
+GPGKEY=CF87837A
+
+## where the LVM-snapshots will reside
+SNAPBASE=/dev/virthosts
+
+BACKUPDIR=$1
+shift
+VHOST=$1
+shift
+VDISKS=$@
+
+error() {
+  echo "$@" 1>&2
+}
+
+fatal() {
+  error "$@"
+  exit 1
+}
+
+usage() {
+  error "$0 <backupdir> <vname> [<vdisk1> ...]"
+  error "	backup virtual machine named '<vname>' including it's disk(image)s <vdisk*>"
+  exit 1
+}
+
+check_vhost() {
+  virsh domstate $1 >/dev/null 2>&1 || fatal "unable to query state of '$1'"
+}
+
+check_guard() {
+   local v=$1
+   if [ "${v}" = "${v#SNAP-}" ]; then return 1; fi ## missing leading 'SNAP_'
+   if [ "${v}" = "${v%-SNAP}" ]; then return 1; fi ## missing trailing 'SNAP_'
+   return 0
+}
+make_guard() {
+   echo "SNAP-$1-SNAP"
+}
+un_guard() {
+  local d=$1
+  d=${d#SNAP-}
+  d=${d%-SNAP}
+  echo $d
+}
+
+
+do_clone() {
+ local INFILE=$1
+ local OUTFILE=$2
+
+ if [ -e "${INFILE}" ]; then
+   if [ "x${OUTFILE}" != "x" ]; then
+    gzip -c "${INFILE}" | gpg --encrypt --recipient ${GPGKEY} --output "${OUTFILE}"
+   fi
+ fi
+}
+
+getdisksize() {
+  local DISK=$1
+
+  if [ -e "${DISK}" ]; then
+    /sbin/blockdev --getsize64 "${DISK}" 2>/dev/null || echo 0
+  else
+    echo 0
+  fi
+}
+
+do_snaprelease() {
+ local d
+ for d in $@
+ do
+  if check_guard "${d}"; then
+    fulld="${SNAPBASE}/${d}"
+    ## check whether this is actually a block-device
+    if [ -b "${fulld}" ]; then
+     lvremove -f "${fulld}"
+    else
+     error "${fulld} does not exist..."
+    fi
+  else
+    error "NOT removing unguarded '${d}'"
+  fi
+ done
+}
+
+do_snapshot() {
+  local vhost
+  local disks
+  local dsize
+  local suspended
+  local d
+
+  suspended=""
+  SNAPSHOTS=""
+
+  vhost=$1
+  shift
+  disks=$@
+
+echo "suspending VHOST: $vhost"
+echo "cloning disks   : $disks"
+
+  ## check whether this is a valid vhost
+  check_vhost $vhost
+
+  ## try to suspend the vhost
+  ## if this fails, then it was not running and we don't need to resume it later...
+  virsh suspend $vhost > /dev/null 2>&1 && suspended=true
+  for d in $disks
+  do
+    dsize=$(getdisksize $d)
+    if [ "$dsize" -gt 0 ]; then
+      sdisk=$(make_guard ${vhost}-$(echo ${d#/} | sed -e 's|/|_|g'))
+
+      lvcreate --snapshot --name "${sdisk}" --size ${dsize}B "${d}" 1>&2 && SNAPSHOTS="${sdisk} ${SNAPSHOTS}"
+    else
+      error "skipping empty/invalid disk '$d'"
+    fi
+  done
+
+  if [ "x${suspended}" = "xtrue" ]; then
+    virsh resume $vhost 1>&2
+  fi
+  echo "snapshots: $SNAPSHOTS"
+}
+
+do_backup() {
+## dump the VHOST-config
+virsh dumpxml ${VHOST} > ${BACKUPDIR}/${VHOST}.xml
+
+## make gzipped/encrypted snapshots of the disks
+for d in ${SNAPSHOTS}; do
+  do_clone "${SNAPBASE}/${d}" "${BACKUPDIR}/$(un_guard ${d}).img.gz.gpg"
+done
+}
+
+if [ -e "${BACKUPDIR}" ]; then
+  if [ -d "${BACKUPDIR}" ]; then
+    :
+  else
+    fatal "target '${BACKUPDIR}' already exists and is not a directory"
+  fi
+else
+  mkdir -p "${BACKUPDIR}" || fatal "unable to create target '${BACKUPDIR}'"
+fi
+
+do_snapshot ${VHOST} ${VDISKS}
+do_backup
+do_snaprelease ${SNAPSHOTS}
