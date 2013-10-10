@@ -15,18 +15,29 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see {http://www.gnu.org/licenses/}.
 
-
 ## a gpg-key for encrypting the images
-GPGKEY=CF87837A
+GPGKEY=
+GPGEXTENSION=".gpg"
+
+## which zip-algorithm to use
+ZIP=gzip
+ZIPEXTENSION=".gz"
+
+## verbosity level
+VERBOSE=0
 
 ## where the LVM-snapshots will reside
 SNAPBASE=/dev/virthosts
 
-BACKUPDIR=$1
-shift
-VHOST=$1
-shift
-VDISKS=$@
+BACKUPDIR=
+VHOST=
+VDISKS=
+
+#BACKUPDIR=$1
+#shift
+#VHOST=$1
+#shift
+#VDISKS=$@
 
 error() {
   echo "$@" 1>&2
@@ -38,24 +49,146 @@ fatal() {
 }
 
 usage() {
-  error "$0 <backupdir> <vname> [<vdisk1> ...]"
+## -l: volume-group of snapshots
+## -n ...: virtual host
+## -o ...: backup-directory
+## -e ...: gpg-key (to enable encryption)
+## -z: (gzip) compression
+## -j: (bzip) compression
+## -J: (xz) compression
+## -Z: compress
+  error "$0 [-zh]  [-e <gpgkey>] [-l <lvmgroup>] -o <backupdir> -n <vname> [<vdisk1> ...]"
   error "	backup virtual machine named '<vname>' including it's disk(image)s <vdisk*>"
+  error ""
+  error "	-n <vname>	: name of the virtual machine to backup (MANDATORY)"
+  error "	-o <backupdir>  : output directory (MANDATORY)"
+  error "	-l <lvgroup>	: LV-group of the snapshots (default: $SNAPBASE)"
+  error "	-e <pgpkey>     : PGP-key to encrypt data with (e.g.: CF87837A)"
+  error "	-v		: verbose printout"
+  error "	-z		: gzip (if 'gzip' is installed)"
+  error "	-Z		: zip/compress (if 'compress' is installed)"
+  error "	-j		: bzip2 (if 'bzip2' is installed)"
+  error "	-J		: xzip (if 'xz' is installed)"
+  error ""
+  error "	-h		: print this help"
   exit 1
 }
 
+showsettings() {
+    error "VHOST      : ${VHOST}"
+    error "BACKUPDIR  : ${BACKUPDIR}"
+    error "GPGKEY     : ${GPGKEY}"
+    error "ZIP        : ${ZIP} ('${ZIPEXTENSION}')"
+    error "verbosity  : ${VERBOSE} (unused)"
+    error
+    error "$@"
+    error
+    usage
+}
+
+while getopts "n:o:l:e:qvzZjJ" opt; do
+ case $opt in
+  n)
+    VHOST=$OPTARG
+    ;;
+  o)
+    BACKUPDIR="${OPTARG}"
+    ;;
+  l)
+    if [ -d "${OPTARG}" ]; then
+      SNAPBASE="${OPTARG}"
+    elif [ -d "/dev/${OPTARG}" ]; then
+      SNAPBASE="/dev/${OPTARG}"
+    else
+      SNAPBASE=""
+    fi
+    ;;
+  e)
+    GPGKEY=$OPTARG
+    ;;
+  q)
+    let VERBOSE=VERBOSE-1
+    ;;
+  v)
+    let VERBOSE=VERBOSE+1
+    ;;
+  z)
+    ZIP=gzip
+    ZIPEXTENSION=".gz"
+    ;;
+  Z)
+    ZIP=compress
+    ZIPEXTENSION=".Z"
+    ;;
+  j)
+    ZIP=bzip2
+    ZIPEXTENSION=".bz2"
+    ;;
+  J)
+    ZIP=xz
+    ZIPEXTENSION=".xz"
+    ;;
+  h|\?)
+     usage
+     ;;
+  :)
+     fatal "Option -${OPTARG} requires an argument"
+     ;;
+  *)
+     error "fallback: $OPTARG"
+ esac
+done
+
+shift $(( ${OPTIND} - 1 ))
+VDISKS=$@
+
+mkdir -p "${BACKUPDIR}"
+
+
+## make sure we have sane values
+if [  "x${VHOST}" = "x"  ]; then showsettings "VM name missing"; fi
+if [ ! -d "${BACKUPDIR}" ]; then showsettings "non-existant backupdir"; fi
+if [ ! -d "${SNAPBASE}"  ]; then showsettings "invalid LV-base"; fi
+
+
+
+#########################################
+# helper functions
+
+
+#########################################
+# get size of blockdevice (in bytes)
+## (so we can create an appropriately sized snapshot)
+getdisksize() {
+  local DISK=$1
+  if [ -e "${DISK}" ]; then
+    /sbin/blockdev --getsize64 "${DISK}" 2>/dev/null || echo 0
+  else
+    echo 0
+  fi
+}
+
+#########################################
+# check whether a VHOST exists
 check_vhost() {
   virsh domstate $1 >/dev/null 2>&1 || fatal "unable to query state of '$1'"
 }
 
+#########################################
+# GUARD labels by prefixing/suffixing a string
+
+# check whether the guard is present
 check_guard() {
    local v=$1
    if [ "${v}" = "${v#SNAP-}" ]; then return 1; fi ## missing leading 'SNAP_'
    if [ "${v}" = "${v%-SNAP}" ]; then return 1; fi ## missing trailing 'SNAP_'
    return 0
 }
+# guard a label
 make_guard() {
    echo "SNAP-$1-SNAP"
 }
+# remove guard from a label
 un_guard() {
   local d=$1
   d=${d#SNAP-}
@@ -64,27 +197,49 @@ un_guard() {
 }
 
 
+#########################################
+# create a backupfile (possibly zipped and/or encrypted)
 do_clone() {
  local INFILE=$1
  local OUTFILE=$2
 
+ local ZIPPER
+ local ZEXT
+ ZIPPER=$(which ${ZIP})
+ if [ "x${ZIPPER}" = "x" ]; then
+   error "compressor ${ZIP} not available"
+   ZIPPER="cat"
+   ZEXT=""
+ else
+   ZIPPER="$(which ${ZIP}) -c"
+   ZEXT=${ZIPEXTENSION}
+ fi
+
+ local ENCRYPTOR
+ local ENCEXT
+
+ if [ "x${GPGKEY}" = "x" ]; then
+   ENCRYPTOR="cat"
+ else
+  if [ "x$(which gpg)" = "x" ]; then
+    error "gpg not available"
+    GPGKEY=""
+    ENCRYPTOR="cat"
+  else
+    ENCRYPTOR="$(which gpg) --encrypt --recipient ${GPGKEY} --output -"
+    ENCEXT="${GPGEXTENSION}"
+  fi
+ fi
+
  if [ -e "${INFILE}" ]; then
    if [ "x${OUTFILE}" != "x" ]; then
-    gzip -c "${INFILE}" | gpg --encrypt --recipient ${GPGKEY} --output "${OUTFILE}"
+       "${ZIPPER}" "${INFILE}" | ${ENCRYPTOR} > "${OUTFILE}${ZEXT}${ENCEXT}"
    fi
  fi
 }
 
-getdisksize() {
-  local DISK=$1
-
-  if [ -e "${DISK}" ]; then
-    /sbin/blockdev --getsize64 "${DISK}" 2>/dev/null || echo 0
-  else
-    echo 0
-  fi
-}
-
+#########################################
+# remove LV snapshots
 do_snaprelease() {
  local d
  for d in $@
@@ -103,6 +258,8 @@ do_snaprelease() {
  done
 }
 
+#########################################
+# create a snapshot while suspending/resuming a VM
 do_snapshot() {
   local vhost
   local disks
@@ -144,6 +301,8 @@ echo "cloning disks   : $disks"
   echo "snapshots: $SNAPSHOTS"
 }
 
+#########################################
+# dump the VM config and create backups of it's disks
 do_backup() {
 ## dump the VHOST-config
 virsh dumpxml ${VHOST} > ${BACKUPDIR}/${VHOST}.xml
