@@ -37,8 +37,6 @@ restore:
 TODO:
 - write/test/document a restoration script
 - check whether givendisk-images are actually part of the given vhost
-- better configurability, using arguments (getopts)
-  - make encryption/zipping optional
 
 
 quick performance test with a vhost 2GB LV:
