@@ -309,7 +309,7 @@ virsh dumpxml ${VHOST} > ${BACKUPDIR}/${VHOST}.xml
 
 ## make gzipped/encrypted snapshots of the disks
 for d in ${SNAPSHOTS}; do
-  do_clone "${SNAPBASE}/${d}" "${BACKUPDIR}/$(un_guard ${d}).img.gz.gpg"
+  do_clone "${SNAPBASE}/${d}" "${BACKUPDIR}/$(un_guard ${d}).img"
 done
 }
 
