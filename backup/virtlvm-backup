@@ -233,7 +233,7 @@ do_clone() {
 
  if [ -e "${INFILE}" ]; then
    if [ "x${OUTFILE}" != "x" ]; then
-       "${ZIPPER}" "${INFILE}" | ${ENCRYPTOR} > "${OUTFILE}${ZEXT}${ENCEXT}"
+       ${ZIPPER} "${INFILE}" | ${ENCRYPTOR} > "${OUTFILE}${ZEXT}${ENCEXT}"
    fi
  fi
 }
