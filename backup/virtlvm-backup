@@ -192,7 +192,8 @@ VDISKSpre=$@
 virsh_getdisks() {
     virsh dumpxml $1 2>/dev/null \
 	| xpath -q -e "//domain/devices/disk/source" 2>/dev/null \
-	| sed -e 's|^.*dev="||' -e 's|".*$||'
+	| grep " dev=\"" \
+	| sed -e 's|^.* dev="||' -e 's|".*$||'
 }
 lvm_filterdisks() {
     ## given a list of block-devices, it will return all devices that are part of an LVgroup
