@@ -82,7 +82,7 @@ usage() {
 ## -j: (bzip) compression
 ## -J: (xz) compression
 ## -Z: compress
-  error "$0 [-zh]  [-e <gpgkey>] [-l <lvmgroup>] -o <backupdir> -n <vname> [<vdisk1> ...]"
+  error "$0 [-zh]  [-e <gpgkey>] [-A] -o <backupdir> -n <vname> [<vdisk1> ...]"
   error "	backup virtual machine named '<vname>' including it's disk(image)s <vdisk*>"
   error ""
   error "	-n <vname>	: name of the virtual machine to backup (MANDATORY)"
@@ -121,7 +121,7 @@ while getopts "n:o:l:e:qvzZjJA" opt; do
     BACKUPDIR="${OPTARG}"
     ;;
   l)
-    error "ignoring unused LVgroup"
+    error "ignoring unused LVgroup option"
     ;;
   e)
     GPGKEY=$OPTARG
