@@ -44,12 +44,10 @@ VDISKSpre=
 error() {
   echo "$@" 1>&2
 }
-
 fatal() {
   error "$@"
   exit 1
 }
-
 debug () {
 # DEBUG=    : no debugging, just run
 # DEBUG=yes : print cmdline before running it
@@ -72,6 +70,12 @@ verbose() {
 	shift
 	error "$@"
     fi
+}
+
+ouput() {
+## function implementation of redirection to file
+## (can be 'debug'ged)
+    cat > $1
 }
 
 usage() {
