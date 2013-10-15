@@ -26,6 +26,9 @@ ZIPEXTENSION=".gz"
 ## verbosity level
 VERBOSE=0
 
+## automatic mode
+AUTOMATIC=0
+
 ## where the LVM-snapshots will reside
 SNAPBASE=/dev/virthosts
 
@@ -62,7 +65,8 @@ usage() {
   error ""
   error "	-n <vname>	: name of the virtual machine to backup (MANDATORY)"
   error "	-o <backupdir>  : output directory (MANDATORY)"
-  error "	-l <lvgroup>	: LV-group of the snapshots (default: $SNAPBASE)"
+  error "	-A              : automatic mode (try guessing vhost configuration)"
+  error "	-l <lvgroup>	: LV-group of the snapshots (default: ${SNAPBASE})"
   error "	-e <pgpkey>     : PGP-key to encrypt data with (e.g.: CF87837A)"
   error "	-v		: verbose printout"
   error "	-z		: gzip (if 'gzip' is installed)"
@@ -73,6 +77,7 @@ usage() {
   error "	-h		: print this help"
   exit 1
 }
+
 
 showsettings() {
     error "VHOST      : ${VHOST}"
@@ -86,7 +91,7 @@ showsettings() {
     usage
 }
 
-while getopts "n:o:l:e:qvzZjJ" opt; do
+while getopts "n:o:l:e:qvzZjJA" opt; do
  case $opt in
   n)
     VHOST=$OPTARG
@@ -128,6 +133,9 @@ while getopts "n:o:l:e:qvzZjJ" opt; do
     ZIP=xz
     ZIPEXTENSION=".xz"
     ;;
+  A)
+    AUTOMATIC=yes
+    ;;
   h|\?)
      usage
      ;;
@@ -163,6 +171,18 @@ mkdir -p "${BACKUPDIR}"
 ## make sure we have sane values
 if [  "x${VHOST}" = "x"  ]; then showsettings "VM name missing"; fi
 if [ ! -d "${BACKUPDIR}" ]; then showsettings "non-existant backupdir"; fi
+
+
+
+## automatic mode:
+#  try guessing possible disks to snapshot
+#  try guessing SNAPBASE for each disk
+if [ "xyes" = "x${AUTOMATIC}" ]; then
+  if [ "x${VDISKS}" = "x" ]; then
+      VDISKS=$(virsh_getdisks "${VHOST}")
+  fi
+fi
+
 if [ ! -d "${SNAPBASE}"  ]; then showsettings "invalid LV-base"; fi
 
 
