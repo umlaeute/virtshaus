@@ -375,7 +375,8 @@ echo "cloning disks   : $disks"
     if [ "$dsize" -gt 0 ]; then
       sdisk=$(make_guard ${vhost}-$(echo ${d#/} | sed -e 's|/|_|g'))
 
-      debug lvcreate --snapshot --name "${sdisk}" --size ${dsize}B "${d}" 1>&2 && SNAPSHOTS="$(get_snapname '${d}' '${sdisk}') ${SNAPSHOTS}"
+      debug lvcreate --snapshot --name "${sdisk}" --size ${dsize}B "${d}" 1>&2 && SNAPSHOTS="$(get_snapname ${d} ${sdisk}) ${SNAPSHOTS}"
+
     else
       error "skipping empty/invalid disk '$d'"
     fi
