@@ -319,7 +319,7 @@ do_clone() {
 
  if [ -e "${INFILE}" ]; then
    if [ "x${OUTFILE}" != "x" ]; then
-       debug ${ZIPPER} "${INFILE}" | debug ${ENCRYPTOR} > "${OUTFILE}${ZEXT}${ENCEXT}"
+       debug ${ZIPPER} "${INFILE}" | debugPipe ${ENCRYPTOR} | debugPipe output "${OUTFILE}${ZEXT}${ENCEXT}"
    fi
  fi
 }
@@ -391,7 +391,7 @@ echo "cloning disks   : $disks"
 # dump the VM config and create backups of it's disks
 do_backup() {
 ## dump the VHOST-config
-virsh dumpxml ${VHOST} > ${BACKUPDIR}/${VHOST}.xml
+    debug virsh dumpxml ${VHOST} | debugPipe output ${BACKUPDIR}/${VHOST}.xml
 
 ## make gzipped/encrypted snapshots of the disks
 for d in ${SNAPSHOTS}; do
