@@ -148,13 +148,13 @@ while getopts "n:o:l:e:qvzZjJAd" opt; do
     GPGKEY=$OPTARG
     ;;
   q)
-    let VERBOSE=VERBOSE-1
+    VERBOSE=$(( VERBOSE-1 ))
     ;;
   v)
-    let VERBOSE=VERBOSE+1
+    VERBOSE=$(( VERBOSE+1 ))
     ;;
   d)
-    let DEBUGlvl=DEBUGlvl+1
+    DEBUGlvl=$(( DEBUGlvl+1 ))
     ;;
   z)
     ZIP=gzip
