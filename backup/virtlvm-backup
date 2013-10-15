@@ -25,6 +25,7 @@ ZIPEXTENSION=".gz"
 
 ## verbosity level
 VERBOSE=0
+DEBUG=
 
 ## automatic mode
 AUTOMATIC=0
@@ -46,6 +47,30 @@ error() {
 fatal() {
   error "$@"
   exit 1
+}
+
+debug () {
+# DEBUG=    : no debugging, just run
+# DEBUG=yes : print cmdline before running it
+# DEBUG=fake: only print cmdline, don't run it
+    case ${DEBUG} in
+	fake)
+	    error "DEBUG: $@"
+	    ;;
+	yes)
+	    error "DEBUG: $@"
+	    $@
+	    ;;
+	*)
+	    $@
+	    ;;
+    esac
+}
+verbose() {
+    if [ $VERBOSE -lt $1 ]; then
+	shift
+	error "$@"
+    fi
 }
 
 usage() {
