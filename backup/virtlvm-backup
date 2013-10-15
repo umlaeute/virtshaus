@@ -246,12 +246,8 @@ get_snapname() {
 # $2: snapname (e.g. 'SNAP-myserver-SNAP')
 # returns: full path to snap-device, e.g. /dev/virthosts/SNAP-myserver-SNAP
 
-    local d
 ## simplistic approach: remove file-name from $1 and prepend it to $2
-    d=${1%/*}/$2
-    if [  -b "${d}" ]; then
-	echo "${d}"
-    fi
+    echo "${1%/*}/$2"
 }
 
 #########################################
