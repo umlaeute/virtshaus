@@ -340,6 +340,12 @@ do_snaprelease() {
  done
 }
 
+collectsnap() {
+  if [ -e "$2" ]; then
+   echo "$2" > $1
+  fi
+}
+
 #########################################
 # create a snapshot while suspending/resuming a VM
 do_snapshot() {
@@ -350,6 +356,8 @@ do_snapshot() {
   local d
   local sdisk
   local fullsdisk
+  local snapfile
+  snapfile=$(tempfile)
 
   suspended=""
   SNAPSHOTS=""
@@ -376,9 +384,7 @@ echo "cloning disks   : $disks"
       if [  -e "${fullsdisk}" ]; then
 	  error "refusing to re-create already existing snaphot at ${fullsdisk}"
       else
-	  debug lvcreate --snapshot --name "${sdisk}" --size ${dsize}B "${d}" 1>&2 && SNAPSHOTS="${fullsdisk} ${SNAPSHOTS}"
-
-	  error "snapshots-> ${SNAPSHOTS}"
+	  debug lvcreate --snapshot --name "${sdisk}" --size ${dsize}B "${d}" 1>&2 && collectsnap "${snapfile}" "${fullsdisk}"
       fi
     else
       error "skipping empty/invalid disk '$d'"
@@ -388,7 +394,8 @@ echo "cloning disks   : $disks"
   if [ "x${suspended}" = "xtrue" ]; then
     virsh resume $vhost 1>&2
   fi
-  echo "snapshots: ${SNAPSHOTS}"
+  SNAPSHOTS=$(cat ${snapfile})
+  rm "${snapfile}"
 }
 
 #########################################
