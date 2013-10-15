@@ -315,6 +315,7 @@ do_clone() {
 
  if [ -e "${INFILE}" ]; then
    if [ "x${OUTFILE}" != "x" ]; then
+       sync
        debug ${ZIPPER} "${INFILE}" | debugPipe ${ENCRYPTOR} | debugPipe output "${OUTFILE}${ZEXT}${ENCEXT}"
    fi
  fi
