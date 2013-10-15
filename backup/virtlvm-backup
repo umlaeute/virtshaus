@@ -133,7 +133,7 @@ showsettings() {
     usage
 }
 
-while getopts "n:o:l:e:qvzZjJA" opt; do
+while getopts "n:o:l:e:qvzZjJAd" opt; do
  case $opt in
   n)
     VHOST=$OPTARG
