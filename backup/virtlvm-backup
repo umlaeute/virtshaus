@@ -29,8 +29,6 @@ VERBOSE=0
 ## automatic mode
 AUTOMATIC=0
 
-## where the LVM-snapshots will reside
-SNAPBASE=/dev/virthosts
 BACKUPDIR=
 VHOST=
 VDISKSpre=
@@ -65,7 +63,6 @@ usage() {
   error "	-n <vname>	: name of the virtual machine to backup (MANDATORY)"
   error "	-o <backupdir>  : output directory (MANDATORY)"
   error "	-A              : automatic mode (try guessing vhost configuration)"
-  error "	-l <lvgroup>	: LV-group of the snapshots (default: ${SNAPBASE})"
   error "	-e <pgpkey>     : PGP-key to encrypt data with (e.g.: CF87837A)"
   error "	-v		: verbose printout"
   error "	-z		: gzip (if 'gzip' is installed)"
@@ -99,13 +96,7 @@ while getopts "n:o:l:e:qvzZjJA" opt; do
     BACKUPDIR="${OPTARG}"
     ;;
   l)
-    if [ -d "${OPTARG}" ]; then
-      SNAPBASE="${OPTARG}"
-    elif [ -d "/dev/${OPTARG}" ]; then
-      SNAPBASE="/dev/${OPTARG}"
-    else
-      SNAPBASE=""
-    fi
+    error "ignoring unused LVgroup"
     ;;
   e)
     GPGKEY=$OPTARG
@@ -175,7 +166,6 @@ if [ ! -d "${BACKUPDIR}" ]; then showsettings "non-existant backupdir"; fi
 
 ## automatic mode:
 #  try guessing possible disks to snapshot
-#  try guessing SNAPBASE for each disk
 if [ "xyes" = "x${AUTOMATIC}" ]; then
   if [ "x${VDISKSpre}" = "x" ]; then
       VDISKSpre=$(virsh_getdisks "${VHOST}")
@@ -183,9 +173,6 @@ if [ "xyes" = "x${AUTOMATIC}" ]; then
 fi
 
 VDISKS=$(lvm_filterdisks ${VDISKSpre})
-if [ ! -d "${SNAPBASE}"  ]; then showsettings "invalid LV-base"; fi
-
-
 
 #########################################
 # helper functions
@@ -293,13 +280,13 @@ do_snaprelease() {
  local d
  for d in $@
  do
-  if check_guard "${d}"; then
-    fulld="${SNAPBASE}/${d}"
+  ## first check whether the device name has the GUARD-protection
+  if check_guard "${d##*/}"; then
     ## check whether this is actually a block-device
-    if [ -b "${fulld}" ]; then
-     lvremove -f "${fulld}"
+    if [ -b "${d}" ]; then
+     lvremove -f "${d}"
     else
-     error "${fulld} does not exist..."
+     error "${d} does not exist..."
     fi
   else
     error "NOT removing unguarded '${d}'"
@@ -338,7 +325,7 @@ echo "cloning disks   : $disks"
     if [ "$dsize" -gt 0 ]; then
       sdisk=$(make_guard ${vhost}-$(echo ${d#/} | sed -e 's|/|_|g'))
 
-      lvcreate --snapshot --name "${sdisk}" --size ${dsize}B "${d}" 1>&2 && SNAPSHOTS="${sdisk} ${SNAPSHOTS}"
+      lvcreate --snapshot --name "${sdisk}" --size ${dsize}B "${d}" 1>&2 && SNAPSHOTS="$(get_snapname '${d}' '${sdisk}') ${SNAPSHOTS}"
     else
       error "skipping empty/invalid disk '$d'"
     fi
@@ -358,7 +345,7 @@ virsh dumpxml ${VHOST} > ${BACKUPDIR}/${VHOST}.xml
 
 ## make gzipped/encrypted snapshots of the disks
 for d in ${SNAPSHOTS}; do
-  do_clone "${SNAPBASE}/${d}" "${BACKUPDIR}/$(un_guard ${d}).img"
+  do_clone "${d}" "${BACKUPDIR}/$(un_guard ${d}).img"
 done
 }
 
