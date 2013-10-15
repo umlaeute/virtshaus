@@ -396,7 +396,7 @@ do_backup() {
 
 ## make gzipped/encrypted snapshots of the disks
 for d in ${SNAPSHOTS}; do
-  do_clone "${d}" "${BACKUPDIR}/$(un_guard ${d}).img"
+  do_clone "${d}" "${BACKUPDIR}/$(un_guard ${d##*/}).img"
 done
 }
 
