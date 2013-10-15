@@ -352,6 +352,8 @@ do_snapshot() {
   local dsize
   local suspended
   local d
+  local sdisk
+  local fullsdisk
 
   suspended=""
   SNAPSHOTS=""
@@ -374,9 +376,12 @@ echo "cloning disks   : $disks"
     dsize=$(get_disksize $d)
     if [ "$dsize" -gt 0 ]; then
       sdisk=$(make_guard ${vhost}-$(echo ${d#/} | sed -e 's|/|_|g'))
-
-      debug lvcreate --snapshot --name "${sdisk}" --size ${dsize}B "${d}" 1>&2 && SNAPSHOTS="$(get_snapname ${d} ${sdisk}) ${SNAPSHOTS}"
-
+      fullsdisk=$(get_snapname ${d} ${sdisk})
+      if [  -e "${fullsdisk}" ]; then
+	  error "refusing to re-create already existing snaphot at ${fullsdisk}"
+      else
+	  debug lvcreate --snapshot --name "${sdisk}" --size ${dsize}B "${d}" 1>&2 && SNAPSHOTS="${fullsdisk} ${SNAPSHOTS}"
+      fi
     else
       error "skipping empty/invalid disk '$d'"
     fi
