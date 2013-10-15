@@ -86,7 +86,7 @@ verbose() {
     fi
 }
 
-ouput() {
+output() {
 ## function implementation of redirection to file
 ## (can be 'debug'ged)
     cat > $1
