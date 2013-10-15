@@ -2,6 +2,7 @@ default: all
 
 prefix=/usr/local
 bindir=$(prefix)/bin
+sbindir=$(prefix)/sbin
 
 
 INSTALL = /usr/bin/install -c
@@ -11,8 +12,8 @@ INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 
 install: all
-	$(INSTALL_DIR) $(DESTDIR)$(bindir)
-	$(INSTALL_SCRIPT) virtlvm-backup $(DESTDIR)$(bindir)
+	$(INSTALL_DIR) $(DESTDIR)$(sbindir)
+	$(INSTALL_SCRIPT) virtlvm-backup $(DESTDIR)$(sbindir)
 
 all: virtlvm-backup
 
