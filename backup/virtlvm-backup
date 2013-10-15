@@ -250,9 +250,8 @@ get_snapname() {
 ## simplistic approach: remove file-name from $1 and prepend it to $2
     d=${1%/*}/$2
     if [  -b "${d}" ]; then
-	return "${d}"
+	echo "${d}"
     fi
-    return ""
 }
 
 #########################################
