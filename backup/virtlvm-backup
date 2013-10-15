@@ -324,6 +324,7 @@ do_clone() {
 # remove LV snapshots
 do_snaprelease() {
  local d
+ sync
  for d in $@
  do
   ## first check whether the device name has the GUARD-protection
@@ -331,6 +332,7 @@ do_snaprelease() {
     ## check whether this is actually a block-device
     if [ -b "${d}" ]; then
      debug lvremove -f "${d}"
+     sync
     else
      error "${d} does not exist..."
     fi
@@ -338,6 +340,7 @@ do_snaprelease() {
     error "NOT removing unguarded '${d}'"
   fi
  done
+ sync
 }
 
 collectsnap() {
