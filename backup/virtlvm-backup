@@ -31,16 +31,15 @@ AUTOMATIC=0
 
 ## where the LVM-snapshots will reside
 SNAPBASE=/dev/virthosts
-
 BACKUPDIR=
 VHOST=
-VDISKS=
+VDISKSpre=
 
 #BACKUPDIR=$1
 #shift
 #VHOST=$1
 #shift
-#VDISKS=$@
+#VDISKSpre=$@
 
 error() {
   echo "$@" 1>&2
@@ -148,7 +147,7 @@ while getopts "n:o:l:e:qvzZjJA" opt; do
 done
 
 shift $(( ${OPTIND} - 1 ))
-VDISKS=$@
+VDISKSpre=$@
 
 virsh_getdisks() {
     virsh dumpxml $1 2>/dev/null \
@@ -178,11 +177,12 @@ if [ ! -d "${BACKUPDIR}" ]; then showsettings "non-existant backupdir"; fi
 #  try guessing possible disks to snapshot
 #  try guessing SNAPBASE for each disk
 if [ "xyes" = "x${AUTOMATIC}" ]; then
-  if [ "x${VDISKS}" = "x" ]; then
-      VDISKS=$(virsh_getdisks "${VHOST}")
+  if [ "x${VDISKSpre}" = "x" ]; then
+      VDISKSpre=$(virsh_getdisks "${VHOST}")
   fi
 fi
 
+VDISKS=$(lvm_filterdisks ${VDISKSpre})
 if [ ! -d "${SNAPBASE}"  ]; then showsettings "invalid LV-base"; fi
 
 
