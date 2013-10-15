@@ -159,7 +159,7 @@ if [ ! -d "${SNAPBASE}"  ]; then showsettings "invalid LV-base"; fi
 #########################################
 # get size of blockdevice (in bytes)
 ## (so we can create an appropriately sized snapshot)
-getdisksize() {
+get_disksize() {
   local DISK=$1
   if [ -e "${DISK}" ]; then
     /sbin/blockdev --getsize64 "${DISK}" 2>/dev/null || echo 0
@@ -285,7 +285,7 @@ echo "cloning disks   : $disks"
   virsh suspend $vhost > /dev/null 2>&1 && suspended=true
   for d in $disks
   do
-    dsize=$(getdisksize $d)
+    dsize=$(get_disksize $d)
     if [ "$dsize" -gt 0 ]; then
       sdisk=$(make_guard ${vhost}-$(echo ${d#/} | sed -e 's|/|_|g'))
 
