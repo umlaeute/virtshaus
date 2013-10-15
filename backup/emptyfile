@@ -1,0 +1,31 @@
+#!/bin/sh
+
+OUTPUT=$1
+
+error() {
+  echo "$@" 1>&2
+}
+fatal() {
+  error "$@"
+  exit 1
+}
+if [ "x${OUTPUT}" = "x" ]; then
+ error "usage: $0 <outputdir>" 1>2
+ error "	will create an empty file in <outputdir> and delete it"
+ exit 1
+fi
+ 
+
+if [ -d "${OUTPUT}" ]; then
+ OUTPUT=$(tempfile -d "${OUTPUT}")
+else
+ if [ -e "${OUTPUT}" ]; then
+   error "refusing to overwrite existing file: ${OUTPUT}" 
+   exit 1
+ fi
+fi
+
+touch "${OUTPUT}" 2>/dev/null || fatal "unable to create ${OUTPUT}"
+
+dd if=/dev/zero of="${OUTPUT}" bs=512M
+rm "${OUTPUT}"
