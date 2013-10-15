@@ -294,7 +294,7 @@ do_clone() {
 
  if [ -e "${INFILE}" ]; then
    if [ "x${OUTFILE}" != "x" ]; then
-       ${ZIPPER} "${INFILE}" | ${ENCRYPTOR} > "${OUTFILE}${ZEXT}${ENCEXT}"
+       debug ${ZIPPER} "${INFILE}" | debug ${ENCRYPTOR} > "${OUTFILE}${ZEXT}${ENCEXT}"
    fi
  fi
 }
@@ -309,7 +309,7 @@ do_snaprelease() {
   if check_guard "${d##*/}"; then
     ## check whether this is actually a block-device
     if [ -b "${d}" ]; then
-     lvremove -f "${d}"
+     debug lvremove -f "${d}"
     else
      error "${d} does not exist..."
     fi
@@ -350,7 +350,7 @@ echo "cloning disks   : $disks"
     if [ "$dsize" -gt 0 ]; then
       sdisk=$(make_guard ${vhost}-$(echo ${d#/} | sed -e 's|/|_|g'))
 
-      lvcreate --snapshot --name "${sdisk}" --size ${dsize}B "${d}" 1>&2 && SNAPSHOTS="$(get_snapname '${d}' '${sdisk}') ${SNAPSHOTS}"
+      debug lvcreate --snapshot --name "${sdisk}" --size ${dsize}B "${d}" 1>&2 && SNAPSHOTS="$(get_snapname '${d}' '${sdisk}') ${SNAPSHOTS}"
     else
       error "skipping empty/invalid disk '$d'"
     fi
