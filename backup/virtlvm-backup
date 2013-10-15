@@ -381,6 +381,8 @@ echo "cloning disks   : $disks"
 	  error "refusing to re-create already existing snaphot at ${fullsdisk}"
       else
 	  debug lvcreate --snapshot --name "${sdisk}" --size ${dsize}B "${d}" 1>&2 && SNAPSHOTS="${fullsdisk} ${SNAPSHOTS}"
+
+	  error "snapshots-> ${SNAPSHOTS}"
       fi
     else
       error "skipping empty/invalid disk '$d'"
@@ -390,7 +392,7 @@ echo "cloning disks   : $disks"
   if [ "x${suspended}" = "xtrue" ]; then
     virsh resume $vhost 1>&2
   fi
-  echo "snapshots: $SNAPSHOTS"
+  echo "snapshots: ${SNAPSHOTS}"
 }
 
 #########################################
