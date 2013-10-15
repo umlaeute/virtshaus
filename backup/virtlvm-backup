@@ -332,6 +332,7 @@ do_snaprelease() {
   if check_guard "${d##*/}"; then
     ## check whether this is actually a block-device
     if [ -b "${d}" ]; then
+     debug dmsetup remove "${d}"
      debug lvremove -f "${d}"
      sync
     else
