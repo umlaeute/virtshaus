@@ -65,6 +65,20 @@ debug () {
 	    ;;
     esac
 }
+debugPipe () {
+    case ${DEBUG} in
+	fake)
+	    error "DEBUG:| $@"
+	    ;;
+	yes)
+	    error "DEBUG:| $@"
+	    $@
+	    ;;
+	*)
+	    $@
+	    ;;
+    esac
+}
 verbose() {
     if [ $VERBOSE -lt $1 ]; then
 	shift
