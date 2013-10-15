@@ -26,6 +26,7 @@ ZIPEXTENSION=".gz"
 ## verbosity level
 VERBOSE=0
 DEBUG=
+DEBUGlvl=0
 
 ## automatic mode
 AUTOMATIC=0
@@ -90,6 +91,7 @@ usage() {
   error "	-A              : automatic mode (try guessing vhost configuration)"
   error "	-e <pgpkey>     : PGP-key to encrypt data with (e.g.: CF87837A)"
   error "	-v		: verbose printout"
+  error "	-d		: debug mode ('-d -d' will not create backups)"
   error "	-z		: gzip (if 'gzip' is installed)"
   error "	-Z		: zip/compress (if 'compress' is installed)"
   error "	-j		: bzip2 (if 'bzip2' is installed)"
@@ -131,6 +133,9 @@ while getopts "n:o:l:e:qvzZjJA" opt; do
     ;;
   v)
     let VERBOSE=VERBOSE+1
+    ;;
+  d)
+    let DEBUGlvl=DEBUGlvl+1
     ;;
   z)
     ZIP=gzip
@@ -186,8 +191,9 @@ mkdir -p "${BACKUPDIR}"
 ## make sure we have sane values
 if [  "x${VHOST}" = "x"  ]; then showsettings "VM name missing"; fi
 if [ ! -d "${BACKUPDIR}" ]; then showsettings "non-existant backupdir"; fi
-
-
+DEBUG=""
+if [ ${DEBUGlvl} -gt 0 ]; then DEBUG="yes"; fi
+if [ ${DEBUGlvl} -gt 1 ]; then DEBUG="fake"; fi
 
 ## automatic mode:
 #  try guessing possible disks to snapshot
