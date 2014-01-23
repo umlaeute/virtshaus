@@ -31,6 +31,10 @@ DEBUGlvl=0
 ## automatic mode
 AUTOMATIC=0
 
+## default timestamp (none) in filenames
+TIMESTAMP=""
+
+
 BACKUPDIR=
 VHOST=
 VDISKSpre=
@@ -107,6 +111,7 @@ usage() {
   error "	-n <vname>	: name of the virtual machine to backup (MANDATORY)"
   error "	-o <backupdir>  : output directory (MANDATORY)"
   error "	-A              : automatic mode (try guessing vhost configuration)"
+  error "	-T              : add timestamp to output filenames"
   error "	-e <pgpkey>     : PGP-key to encrypt data with (e.g.: CF87837A)"
   error "	-v		: verbose printout (multiple times to raise verbosity)"
   error "	-q		: quiet printout (multiple times to lower verbosity)"
@@ -133,7 +138,7 @@ showsettings() {
     usage
 }
 
-while getopts "n:o:l:e:qvzZjJAd" opt; do
+while getopts "n:o:l:e:qvzZjJAdT" opt; do
  case $opt in
   n)
     VHOST=$OPTARG
@@ -174,6 +179,9 @@ while getopts "n:o:l:e:qvzZjJAd" opt; do
     ;;
   A)
     AUTOMATIC=yes
+    ;;
+  T)
+    TIMESTAMP=".$(date +%Y%m%d-%H%M%S)"
     ;;
   h|\?)
      usage
@@ -407,11 +415,11 @@ echo "cloning disks   : $disks"
 # dump the VM config and create backups of it's disks
 do_backup() {
 ## dump the VHOST-config
-    debug virsh dumpxml ${VHOST} | debugPipe output ${BACKUPDIR}/${VHOST}.xml
+    debug virsh dumpxml ${VHOST} | debugPipe output "${BACKUPDIR}/${VHOST}${TIMESTAMP}.xml"
 
 ## make gzipped/encrypted snapshots of the disks
 for d in ${SNAPSHOTS}; do
-  do_clone "${d}" "${BACKUPDIR}/$(un_guard ${d##*/}).img"
+  do_clone "${d}" "${BACKUPDIR}/$(un_guard ${d##*/})${TIMESTAMP}.img"
 done
 }
 
