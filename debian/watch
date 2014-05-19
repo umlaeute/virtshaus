@@ -1,3 +1,3 @@
 version=3
-opts="uversionmangle=s/^\/v//;s/\/0~master/0/" \
-http://githubredir.debian.net/github/umlaeute/virtshaus (.*).tar.gz
+opts=filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/virtshaus-$1\.tar\.gz/ \
+  https://github.com/umlaeute/virtshaus/tags .*/v?(\d\S*)\.tar\.gz
