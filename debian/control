@@ -1,5 +1,5 @@
 Source: virtshaus
-Section: 
+Section: admin
 Priority: optional
 Maintainer: IOhannes m zmölnig (Debian/GNU) <umlaeute@debian.org>
 Build-Depends:
