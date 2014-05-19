@@ -14,3 +14,9 @@ Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: backup scripts for virtual machines
  a small collection to backup VMs (based on libvirt/lvm)
+
+Package: virtshaus-guest-utils
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: utility scripts for virtshaus-guests
+ a small collection for scripts to be run on guests
