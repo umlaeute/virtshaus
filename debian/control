@@ -1,0 +1,16 @@
+Source: virtshaus
+Section: 
+Priority: optional
+Maintainer: IOhannes m zmölnig (Debian/GNU) <umlaeute@debian.org>
+Build-Depends:
+ debhelper (>= 9)
+Standards-Version: 3.9.5
+Vcs-Git: https://github.com/umlaeute/virtshaus
+Vcs-Browser: https://github.com/umlaeute/virtshaus
+Homepage: https://github.com/umlaeute/virtshaus
+
+Package: virtshaus-backup
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: backup scripts for virtual machines
+ a small collection to backup VMs (based on libvirt/lvm)
