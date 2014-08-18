@@ -1,0 +1,169 @@
+#!/bin/sh
+
+## this script makes sure that all NFS mounts (as declared in /etc/fstab)
+## are properly mounted.
+## if somebody is logged into the machine, this should not do anything
+## (to not interfere with the admin, when fixing things)
+
+## case#1
+## simply call "mount" (again)
+
+## case#2
+## reboot the machine so it can automatically mount
+
+
+## options:
+### -f: force (do not abort if somebody is logged in)
+### -r: reboot if NFS-shares are missing
+### -s <time>: sleep <time> seconds before doing anything
+###            (usefull when started from cron @reboot)
+###
+
+DELAY=0
+FORCE=no
+FSTAB=/etc/fstab
+DEBUG=no
+alias debug=false
+
+error() {
+ echo "$@" 1>&2
+}
+
+usage() {
+  error "Usage: $0 [-f] [-r] [-d <time>] [<fstab>]"
+  error
+  error "   -f       : force (do not abort if somebody is logged in)"
+  error "   -r       : reboot if NFS-shares are missing"
+  error "   -s <time>: sleep <time> seconds before doing anything"
+  error "            (useful when started from cron @reboot)"
+  error "   -d       : debug mode"
+  error "   <fstab>  : mount definition (default: /etc/fstab)"
+
+  error
+}
+
+## mount-functions:
+### $1: source (e.g. "remotehost:/Net/share/homes")
+### $2: target (e.g. "/home")
+
+## "mount" by rebooting the system
+mount_via_reboot() {
+  local source="$1"
+  local target="$2"
+
+  if [ "x${DEBUG}" != "xyes" ]; then
+      reboot
+  else
+      error "(not) rebooting to mount '${source}' onto '${target}'"
+  fi
+}
+## "mount" by calling mount
+mount_via_mount() {
+  local source="$1"
+  local target="$2"
+
+  if [ "x${DEBUG}" != "xyes" ]; then
+      mount "${target}"
+  else
+      error "(not) mounting '${source}' onto '${target}'"
+  fi
+}
+
+alias domount=mount_via_mount
+
+## exits with 'true' is somebody is logged in
+have_loggedin() {
+ who | grep . 2>&1 >/dev/null
+}
+
+## prints all NFS-shares (found in /etc/fstab or the file privided as argument)
+## which are not marked as "noauto", one by line
+list_needed_nfs() {
+  local spec
+  local file
+  local type
+  local opts
+  cat "$1" | sed -e 's|#.*||' | egrep "^[^[:blank:]]*" | while read spec file type opts
+  do
+      case "${type}" in
+        nfs*)
+          ;;
+        *)
+          continue
+          ;;
+       esac
+       if echo "${opts}" | grep -w "noauto" >/dev/null 2>&1; then
+         continue
+       fi
+       echo "${spec} ${file}"
+  done
+}
+
+is_mounted() {
+  local MOUNTS=/proc/mounts
+  cut -d' ' -f2 "${MOUNTS}" | egrep "^$1$" >/dev/null 2>&1
+}
+
+filter_existing_nfs() {
+  while read source target
+  do
+      is_mounted ${target} || echo "${source}" "${target}"
+  done
+}
+
+
+OPTIND=1 # Reset is necessary if getopts was used previously in the script.  It is a good idea to make this local in a function.
+while getopts ":hfrs:d" opt; do
+  case "$opt" in
+    h)
+      usage
+      exit 0
+      ;;
+    f)  FORCE=yes
+      ;;
+    r)  alias domount=mount_via_reboot
+      ;;
+    s)  DELAY=${OPTARG}
+      ;;
+    d)  DEBUG=yes
+      ;;
+    '?')
+      usage
+      exit 1
+      ;;
+    esac
+done
+shift "$((OPTIND-1))" # Shift off the options and optional --.
+
+if [ "x$1" != "x" ]; then
+    FSTAB="$1"
+fi
+
+if [ "x${DEBUG}" = "xyes" ]; then
+  alias debug=error
+fi
+
+## shall we sleep?
+debug "sleeping for ${DELAY} seconds"
+test $((DELAY)) -gt 0 && sleep $((DELAY))
+
+## check if the fstab-file exists. exit otherwise
+debug "reading fstab: '${FSTAB}'"
+if [ -f "${FSTAB}" -a -r "${FSTAB}" ]; then
+ :
+else
+ usage
+ error "unable to read fstab-file: '${FSTAB}'"
+ exit 1
+fi
+
+## check if there are users (and we are not forced)
+if have_loggedin && test "x${FORCE}" != "xyes"; then
+ exit 0
+fi
+
+
+list_needed_nfs "${FSTAB}" | filter_existing_nfs | while read source target
+do
+ domount "${source}" "${target}"
+done
