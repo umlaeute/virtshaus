@@ -1,5 +1,11 @@
-virtshaus (0.1-1) UNRELEASED; urgency=medium
+virtshaus (0.2-1) UNRELEASED; urgency=medium
+
+  * added ensureNFS script
+
+ -- IOhannes m zmölnig <zmoelnig@iem.at>  Mon, 01 Sep 2014 15:55:51 +0200
+
+virtshaus (0.1-1) unstable; urgency=medium
 
   * Initial release.
 
- -- IOhannes m zmölnig <zmoelnig@iem.at>  Mon, 19 May 2014 11:47:26 +0200
+ -- IOhannes m zmölnig <zmoelnig@iem.at>  Mon, 01 Sep 2014 15:55:40 +0200
