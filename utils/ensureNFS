@@ -23,6 +23,10 @@
 ### make '-s' take a list of times (e.g. 60,60,120), and it will retry multiple times
 ### (if -r was given, reboot should only occur at the *last* attempt)
 
+## TODO:
+### detected whether this is run interactively or as a daemon
+### if not interactive, print to syslog
+
 DELAY=0
 FORCE=no
 FSTAB=/etc/fstab
