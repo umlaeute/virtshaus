@@ -64,6 +64,7 @@ mount_via_reboot() {
   local target="$2"
 
   if [ "x${DEBUG}" != "xyes" ]; then
+      error "rebooting to mount '${source}' onto '${target}'"
       reboot
   else
       error "(not) rebooting to mount '${source}' onto '${target}'"
@@ -75,6 +76,7 @@ mount_via_mount() {
   local target="$2"
 
   if [ "x${DEBUG}" != "xyes" ]; then
+      error "mounting ('${source}' onto) '${target}'"
       mount "${target}"
   else
       error "(not) mounting '${source}' onto '${target}'"
