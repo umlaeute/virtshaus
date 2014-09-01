@@ -33,9 +33,17 @@ FSTAB=/etc/fstab
 DEBUG=no
 alias debug=false
 
+if [ -t 0 ]; then
+## interactive shell
 error() {
  echo "$@" 1>&2
 }
+else
+## non-interactive (e.g. run as daemon)
+error() {
+ logger -p daemon.warning "$@"
+}
+fi
 
 usage() {
   error "Usage: $0 [-f] [-r] [-d <time>] [<fstab>]"
