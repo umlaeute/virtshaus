@@ -44,7 +44,7 @@ VDISKSpre=
 #VHOST=$1
 #shift
 #VDISKSpre=$@
-CMDLINE="$(readlink $0) $@"
+CMDLINE="$(readlink -f $0) $@"
 
 error() {
   echo "$@" 1>&2
