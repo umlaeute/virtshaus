@@ -1,4 +1,11 @@
-virtshaus (0.2-1) UNRELEASED; urgency=medium
+virtshaus (0.2-2) UNRELEASED; urgency=medium
+
+  * fixed spelling of virtshaus-emptyfill
+  * virtshaus-lvmbackup no stores a copy of it's call
+
+ -- IOhannes m zmölnig <zmoelnig@iem.at>  Mon, 29 Sep 2014 14:42:54 +0200
+
+virtshaus (0.2-1) unstable; urgency=medium
 
   * added ensureNFS script
 
