@@ -434,5 +434,6 @@ else
 fi
 
 do_snapshot ${VHOST} ${VDISKS}
+echo "$0 $@" > "${BACKUPDIR}/${VHOST}${TIMESTAMP}.sh"
 do_backup
 do_snaprelease ${SNAPSHOTS}
