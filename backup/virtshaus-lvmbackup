@@ -44,6 +44,7 @@ VDISKSpre=
 #VHOST=$1
 #shift
 #VDISKSpre=$@
+CMDLINE="$(readlink $0) $@"
 
 error() {
   echo "$@" 1>&2
@@ -434,6 +435,6 @@ else
 fi
 
 do_snapshot ${VHOST} ${VDISKS}
-echo "$0 $@" > "${BACKUPDIR}/${VHOST}${TIMESTAMP}.sh"
+echo "${CMDLINE}" > "${BACKUPDIR}/${VHOST}${TIMESTAMP}.sh"
 do_backup
 do_snaprelease ${SNAPSHOTS}
