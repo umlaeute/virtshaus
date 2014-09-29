@@ -1,3 +1,9 @@
+virtshaus (0.2-3) unstable; urgency=medium
+
+  * fixed storing of virtshaus-lvmbackup call
+
+ -- IOhannes m zmölnig <zmoelnig@iem.at>  Mon, 29 Sep 2014 15:13:42 +0200
+
 virtshaus (0.2-2) unstable; urgency=medium
 
   * fixed spelling of virtshaus-emptyfill
