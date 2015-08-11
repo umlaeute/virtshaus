@@ -33,6 +33,8 @@ AUTOMATIC=0
 
 ## default timestamp (none) in filenames
 TIMESTAMP=""
+TIMESTAMPPREFIX=""
+TIMESTAMPSUFFIX=""
 
 
 BACKUPDIR=
@@ -40,6 +42,7 @@ VHOST=
 VDISKSpre=
 
 #BACKUPDIR=$1
+BACKUPDIRVHOST=
 #shift
 #VHOST=$1
 #shift
@@ -111,6 +114,7 @@ usage() {
   error ""
   error "	-n <vname>	: name of the virtual machine to backup (MANDATORY)"
   error "	-o <backupdir>  : output directory (MANDATORY)"
+  error "	-V              : add VHOST-name to backupdir"
   error "	-A              : automatic mode (try guessing vhost configuration)"
   error "	-T              : add timestamp to output filenames"
   error "	-e <pgpkey>     : PGP-key to encrypt data with (e.g.: CF87837A)"
@@ -181,8 +185,10 @@ while getopts "n:o:l:e:qvzZjJAdT" opt; do
   A)
     AUTOMATIC=yes
     ;;
+  V)
+    BACKUPDIRVHOST=yes
   T)
-    TIMESTAMP=".$(date +%Y%m%d-%H%M%S)"
+    TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
     ;;
   h|\?)
      usage
@@ -214,12 +220,27 @@ lvm_filterdisks() {
 }
 
 
-mkdir -p "${BACKUPDIR}"
-
-
 ## make sure we have sane values
 if [  "x${VHOST}" = "x"  ]; then showsettings "VM name missing"; fi
+
+if [ "x${BACKUPDIRVHOST}" = "xyes" ]; then
+ # backup to "/.../myvhost/20150808-1237.myvhost-dev_sda.img.gz"
+ BACKUPDIR="${BACKUPDIR%/}/${VHOST}"
+ TIMESTAMPPREFIX="${TIMESTAMP}."
+else
+ # backup to "/.../myvhost-dev_sda.img.20150808-1237.img.gz"
+ TIMESTAMPSUFFIX=".${TIMESTAMP}"
+fi
+if [ "x${TIMESTAMP}" = "x" ]; then
+ # if we don't have a timestamp, empty out the prefix/suffix...
+ TIMESTAMPPREFIX=""
+ TIMESTAMPSUFFIX=""
+fi
+
+
+mkdir -p "${BACKUPDIR}"
 if [ ! -d "${BACKUPDIR}" ]; then showsettings "non-existant backupdir"; fi
+
 DEBUG=""
 if [ ${DEBUGlvl} -gt 0 ]; then DEBUG="yes"; fi
 if [ ${DEBUGlvl} -gt 1 ]; then DEBUG="fake"; fi
@@ -416,11 +437,11 @@ echo "cloning disks   : $disks"
 # dump the VM config and create backups of it's disks
 do_backup() {
 ## dump the VHOST-config
-    debug virsh dumpxml ${VHOST} | debugPipe output "${BACKUPDIR}/${VHOST}${TIMESTAMP}.xml"
+    debug virsh dumpxml ${VHOST} | debugPipe output "${BACKUPDIR}/${TIMESTAMPPREFIX}${VHOST}${TIMESTAMPSUFFIX}.xml"
 
 ## make gzipped/encrypted snapshots of the disks
 for d in ${SNAPSHOTS}; do
-  do_clone "${d}" "${BACKUPDIR}/$(un_guard ${d##*/})${TIMESTAMP}.img"
+  do_clone "${d}" "${BACKUPDIR}/${TIMESTAMPPREFIX}$(un_guard ${d##*/})${TIMESTAMPSUFFIX}.img"
 done
 }
 
@@ -435,6 +456,6 @@ else
 fi
 
 do_snapshot ${VHOST} ${VDISKS}
-echo "${CMDLINE}" > "${BACKUPDIR}/${VHOST}${TIMESTAMP}.sh"
+echo "${CMDLINE}" > "${BACKUPDIR}/${TIMESTAMPPREFIX}${VHOST}${TIMESTAMPSUFFIX}.sh"
 do_backup
 do_snaprelease ${SNAPSHOTS}
