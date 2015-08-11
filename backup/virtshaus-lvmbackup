@@ -187,6 +187,7 @@ while getopts "n:o:l:e:qvzZjJAdT" opt; do
     ;;
   V)
     BACKUPDIRVHOST=yes
+    ;;
   T)
     TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
     ;;
