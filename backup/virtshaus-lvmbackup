@@ -114,7 +114,7 @@ usage() {
   error ""
   error "	-n <vname>	: name of the virtual machine to backup (MANDATORY)"
   error "	-o <backupdir>  : output directory (MANDATORY)"
-  error "	-V              : add VHOST-name to backupdir"
+  error "	-V              : add VHOST-name to output directory"
   error "	-A              : automatic mode (try guessing vhost configuration)"
   error "	-T              : add timestamp to output filenames"
   error "	-e <pgpkey>     : PGP-key to encrypt data with (e.g.: CF87837A)"
